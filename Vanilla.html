@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="WARNO Vanilla — Team Allocation System">
+  <title>WARNO // TEAM ALLOCATION SYSTEM</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #33ff57;
+      --green-dim:   #1a8c2e;
+      --green-glow:  rgba(51, 255, 87, 0.4);
+      --green-faint: rgba(51, 255, 87, 0.08);
+      --amber:       #ffb000;
+      --amber-glow:  rgba(255, 176, 0, 0.4);
+      --red:         #ff3333;
+      --bg:          #020a03;
+      --bg-panel:    #040d05;
+      --border:      #1a6626;
+      --font-terminal: 'VT323', monospace;
+      --font-mono:     'Share Tech Mono', monospace;
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: var(--font-terminal);
+      background-color: var(--bg);
+      color: var(--green);
+      min-height: 100vh;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-image: radial-gradient(ellipse at center, #061008 0%, #000500 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Scanlines */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+      pointer-events: none; z-index: 9999;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: rgba(51,255,87,0.015);
+      pointer-events: none; z-index: 9998;
+      animation: flicker 8s infinite;
+    }
+
+    @keyframes flicker { 0%,97%,100%{opacity:1} 98%{opacity:0.85} 99%{opacity:0.95} }
+    @keyframes blink   { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    @keyframes scandown { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+    @keyframes boot    { 0%{opacity:0} 100%{opacity:1} }
+    @keyframes glitch  { 0%,90%,100%{transform:translateX(0)} 92%{transform:translateX(-2px)} 94%{transform:translateX(2px)} 96%{transform:translateX(-1px)} }
+    @keyframes fadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .scan-line {
+      position: fixed; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(to bottom, transparent, rgba(51,255,87,0.08), transparent);
+      animation: scandown 6s linear infinite;
+      pointer-events: none; z-index: 9997;
+    }
+
+    #root { width: 100%; max-width: 960px; animation: boot 0.4s ease-out; }
+
+    /* ── HEADER ── */
+    .terminal-header {
+      border: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      margin-bottom: 0.5rem;
+      background: var(--bg-panel);
+      box-shadow: 0 0 20px rgba(51,255,87,0.1), inset 0 0 20px rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    .terminal-header::before {
+      content: '████████████████████████████████████████████████████████████████████████████████';
+      display: block; font-size: 6px; color: var(--green-dim);
+      letter-spacing: 0; margin-bottom: 0.75rem; overflow: hidden; white-space: nowrap;
+    }
+
+    .header-top { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; }
+
+    .system-title {
+      font-size: 2.8rem; line-height: 1; color: var(--green);
+      text-shadow: 0 0 10px var(--green-glow), 0 0 30px rgba(51,255,87,0.2);
+      letter-spacing: 2px; animation: glitch 12s infinite;
+    }
+
+    .system-subtitle { font-size:1rem; color:var(--green-dim); letter-spacing:3px; font-family:var(--font-mono); margin-top:0.25rem; }
+
+    .header-meta { text-align:right; font-family:var(--font-mono); font-size:0.7rem; color:var(--green-dim); line-height:1.8; }
+    .header-meta .status-ok { color: var(--green); }
+
+    .cursor { display:inline-block; width:0.6em; height:1em; background:var(--green); vertical-align:text-bottom; animation:blink 1s step-end infinite; margin-left:2px; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 2px;
+      color: var(--green-dim); text-decoration: none; padding: 0.3rem 0;
+      margin-bottom: 0.5rem; transition: color 0.1s;
+    }
+    .back-link:hover { color: var(--green); }
+
+    /* ── PANELS ── */
+    .panel { border:1px solid var(--border); background:var(--bg-panel); margin-bottom:0.5rem; box-shadow:0 0 8px rgba(51,255,87,0.05); }
+
+    .panel-header {
+      padding:0.4rem 1rem; border-bottom:1px solid var(--border);
+      font-size:0.85rem; font-family:var(--font-mono); color:var(--green-dim);
+      letter-spacing:2px; display:flex; align-items:center; gap:0.75rem;
+    }
+
+    .panel-header::before { content:'▶'; color:var(--green); font-size:0.6rem; }
+    .panel-body { padding:1rem 1.25rem; }
+
+    /* ── INSTALL BANNER ── */
+    .install-banner {
+      padding:0.6rem 1.25rem; background-color:rgba(255,176,0,0.08);
+      border:1px solid var(--amber); margin-bottom:0.5rem;
+      display:none; align-items:center; justify-content:space-between; gap:1rem;
+      color:var(--amber); font-size:1.1rem;
+    }
+    .install-banner.show { display:flex; }
+
+    /* ── INPUTS ── */
+    input[type="text"] {
+      background:#000; border:1px solid var(--border); color:var(--green);
+      font-family:var(--font-terminal); font-size:1.3rem; padding:0.4rem 0.75rem;
+      outline:none; width:100%; letter-spacing:1px;
+    }
+    input[type="text"]:focus { border-color:var(--green); box-shadow:0 0 8px var(--green-glow); }
+    input[type="text"]::placeholder { color:var(--green-dim); opacity:0.6; }
+
+    /* ── BUTTONS ── */
+    button {
+      font-family:var(--font-terminal); font-size:1.3rem; letter-spacing:1px;
+      background:transparent; color:var(--green); border:1px solid var(--green-dim);
+      padding:0.4rem 1.2rem; cursor:pointer; transition:all 0.1s; text-transform:uppercase;
+    }
+    button:hover:not(:disabled) { background:rgba(51,255,87,0.1); border-color:var(--green); box-shadow:0 0 10px var(--green-glow); color:#fff; text-shadow:0 0 8px var(--green); }
+    button:active:not(:disabled) { background:rgba(51,255,87,0.2); }
+    button:disabled { color:var(--green-dim); border-color:#0d2e12; cursor:not-allowed; opacity:0.4; }
+
+    /* ── RADIO / CHECKBOX ── */
+    .radio-group, .check-group { display:flex; flex-wrap:wrap; gap:0.5rem; }
+
+    .radio-label, .check-label {
+      display:flex; align-items:center; gap:0.5rem; cursor:pointer;
+      font-size:1.3rem; padding:0.3rem 0.75rem; border:1px solid var(--border);
+      transition:all 0.1s; user-select:none;
+    }
+    .radio-label:hover, .check-label:hover { border-color:var(--green-dim); background:var(--green-faint); }
+
+    input[type="radio"], input[type="checkbox"] {
+      appearance:none; width:14px; height:14px; border:1px solid var(--green-dim);
+      background:#000; cursor:pointer; position:relative; flex-shrink:0; margin-top:1px;
+    }
+    input[type="radio"] { border-radius:50%; }
+    input[type="radio"]:checked, input[type="checkbox"]:checked { border-color:var(--green); background:var(--green); box-shadow:0 0 6px var(--green-glow); }
+    input[type="radio"]:checked::after { content:''; position:absolute; inset:3px; background:#000; border-radius:50%; }
+    input[type="checkbox"]:checked::after { content:'✓'; position:absolute; top:-3px; left:1px; font-size:12px; color:#000; font-weight:bold; }
+
+    .radio-label:has(input:checked),
+    .check-label:has(input:checked) { border-color:var(--green); background:rgba(51,255,87,0.06); color:#fff; text-shadow:0 0 6px var(--green); }
+
+    /* ── PLAYER TAGS ── */
+    .player-tag {
+      display:inline-flex; align-items:center; gap:0.4rem;
+      padding:0.2rem 0.6rem; border:1px solid var(--border);
+      font-size:1.1rem; background:#000; color:var(--green-dim);
+    }
+    .player-tag .remove-player-btn { padding:0 0.3rem; font-size:1rem; border:none; color:var(--red); line-height:1; background:transparent; }
+    .player-tag .remove-player-btn:hover { background:rgba(255,51,51,0.15); border:none; box-shadow:none; color:var(--red); text-shadow:0 0 6px var(--red); }
+
+    .player-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:0.4rem; }
+
+    .section-label { font-family:var(--font-mono); font-size:0.7rem; color:var(--green-dim); letter-spacing:3px; text-transform:uppercase; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.5rem; }
+    .section-label span { color:var(--green); }
+
+    .add-row { display:flex; gap:0.5rem; }
+
+    #generateBtn { font-size:1.6rem; padding:0.6rem 2rem; letter-spacing:3px; border-width:1px; border-color:var(--green); color:var(--green); text-shadow:0 0 8px var(--green-glow); width:100%; }
+    #generateBtn:not(:disabled):hover { background:rgba(51,255,87,0.15); box-shadow:0 0 20px var(--green-glow), inset 0 0 10px rgba(51,255,87,0.05); }
+
+    /* ── TEAMS OUTPUT ── */
+    .teams-container { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.5rem; animation:fadeIn 0.3s ease-out; }
+
+    .team-card { border:1px solid var(--border); background:var(--bg-panel); box-shadow:0 0 12px rgba(51,255,87,0.08); }
+
+    .team-card h3 {
+      font-size:1.5rem; padding:0.5rem 1rem; border-bottom:1px solid var(--border);
+      letter-spacing:1px; color:var(--green); text-shadow:0 0 8px var(--green-glow);
+      background:rgba(51,255,87,0.04);
+    }
+
+    .team-card.pact h3 { color:var(--amber); text-shadow:0 0 8px var(--amber-glow); border-bottom-color:rgba(255,176,0,0.3); }
+
+    .players-list { padding:0.5rem 1rem; display:flex; flex-direction:column; gap:0.25rem; }
+
+    .player-row { padding:0.3rem 0; border-bottom:1px solid rgba(51,255,87,0.07); }
+    .player-row:last-child { border-bottom:none; }
+
+    .player-name-line { display:flex; align-items:center; gap:0.5rem; font-size:1.4rem; }
+    .player-name-line::before { content:'>'; color:var(--green-dim); font-size:1rem; }
+    .player-name { color:var(--green); letter-spacing:1px; }
+    .team-card.pact .player-name { color:var(--amber); }
+
+    .player-division-line {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      color: var(--green-dim);
+      padding-left: 1.4rem;
+      margin-top: 0.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .div-name { color: var(--green); font-size: 0.72rem; }
+    .team-card.pact .div-name { color: var(--amber); }
+    .div-type { color: var(--green-dim); font-size: 0.6rem; opacity: 0.7; }
+
+    /* ── NATION POOL INFO ── */
+    .nation-pool { margin-top:0.75rem; display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+
+    .nation-pool-col { border:1px solid var(--border); padding:0.5rem 0.75rem; background:#000; }
+    .nation-pool-col .pool-label { font-family:var(--font-mono); font-size:0.65rem; letter-spacing:3px; color:var(--green-dim); margin-bottom:0.4rem; }
+    .nation-pool-col.pact-pool .pool-label { color:rgba(255,176,0,0.5); }
+
+    .nation-pool-col ul { list-style:none; font-size:0.95rem; color:var(--green-dim); line-height:1.65; }
+    .nation-pool-col.pact-pool ul { color:rgba(255,176,0,0.6); }
+    .nation-pool-col ul li span.div-cat { font-size:0.6rem; opacity:0.55; }
+
+    /* ── MISC ── */
+    .term-divider { border:none; border-top:1px solid var(--border); margin:0.5rem 0; }
+
+    .status-bar { font-family:var(--font-mono); font-size:0.65rem; color:var(--green-dim); padding:0.3rem 1rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; letter-spacing:1px; }
+
+    @media (max-width:700px) {
+      .teams-container { grid-template-columns:1fr; }
+      .system-title { font-size:2rem; }
+      .header-meta { display:none; }
+      .nation-pool { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scan-line"></div>
+  <div id="root">
+
+    <a class="back-link" href="./index.html">← BACK TO NIGHTSHIFT OPS TOOLS</a>
+
+    <!-- INSTALL BANNER -->
+    <div class="install-banner" id="installBanner">
+      <span>⚠ INSTALL WARNO TEAM ALLOCATION SYSTEM AS LOCAL APP</span>
+      <div style="display:flex;gap:0.5rem;">
+        <button id="installBtn">INSTALL</button>
+        <button id="closeInstallBtn" style="border-color:#553300;color:var(--amber);">✕</button>
+      </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="terminal-header">
+      <div class="header-top">
+        <div>
+          <div class="system-title">WARNO // TAS</div>
+          <div class="system-subtitle">TEAM ALLOCATION SYSTEM v3.0 // VANILLA // NATO AFCENT</div>
+        </div>
+        <div class="header-meta">
+          <div>CLASSIFICATION: <span class="status-ok">RESTRICTED</span></div>
+          <div>TERMINAL: <span class="status-ok">ONLINE</span></div>
+          <div>CRYPTO: <span class="status-ok">ACTIVE</span></div>
+          <div>NODE: SHAPE-HQ-MONS-04</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding-bottom:1.5rem;">
+
+      <!-- MODULE 1: PLAYERS -->
+      <div class="panel">
+        <div class="panel-header">MODULE 1 — PERSONNEL REGISTER</div>
+        <div class="panel-body">
+          <div class="section-label">ADD OPERATOR TO REGISTER</div>
+          <div class="add-row" style="margin-bottom:0.75rem;">
+            <input type="text" id="newPlayerInput" placeholder="ENTER CALLSIGN_">
+            <button id="addPlayerBtn">ADD</button>
+          </div>
+          <div class="section-label">REGISTERED OPERATORS <span id="playerCountBadge"></span></div>
+          <div id="playerManageList" style="display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
+        </div>
+      </div>
+
+      <!-- MODULE 2: PARAMETERS -->
+      <div class="panel">
+        <div class="panel-header">MODULE 2 — ENGAGEMENT PARAMETERS</div>
+        <div class="panel-body">
+          <div class="section-label">ENGAGEMENT SIZE</div>
+          <div class="radio-group" style="margin-bottom:1rem;">
+            <label class="radio-label"><input type="radio" name="gameSize" value="1"><span>1v1</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="2"><span>2v2</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="3"><span>3v3</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="4"><span>4v4</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="5" checked><span>5v5</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="10"><span>10v10</span></label>
+          </div>
+          <div class="section-label">FORCE MATCHUP</div>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="matchupType" value="nato-vs-pact" checked><span>NATO vs PACT</span></label>
+            <label class="radio-label"><input type="radio" name="matchupType" value="nato-vs-nato"><span>NATO vs NATO</span></label>
+            <label class="radio-label"><input type="radio" name="matchupType" value="pact-vs-pact"><span>PACT vs PACT</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 3: SELECT PLAYERS -->
+      <div class="panel">
+        <div class="panel-header">MODULE 3 — OPERATOR SELECTION</div>
+        <div class="panel-body">
+          <div class="section-label">SELECT OPERATORS <span id="playerCount"></span></div>
+          <div id="playerList" class="player-grid"></div>
+        </div>
+      </div>
+
+      <!-- MODULE 4: SEED -->
+      <div class="panel" id="seedSection" style="display:none;">
+        <div class="panel-header">MODULE 4 — PRIORITY ASSIGNMENTS (OPTIONAL)</div>
+        <div class="panel-body">
+          <div class="section-label">MARK OPERATORS FOR FORCED SPLIT</div>
+          <div id="seedList" class="player-grid"></div>
+        </div>
+      </div>
+
+      <!-- MODULE 5: DIVISION ASSIGNMENT -->
+      <div class="panel" id="nationSection" style="display:none;">
+        <div class="panel-header">MODULE 5 — DIVISION ASSIGNMENT (OPTIONAL)</div>
+        <div class="panel-body">
+          <label class="check-label" style="margin-bottom:0.75rem;">
+            <input type="checkbox" id="randomiseDivisions">
+            <span>ASSIGN RANDOM DIVISION TO EACH OPERATOR</span>
+          </label>
+          <div id="divisionPoolInfo" style="display:none;">
+            <div class="section-label" style="margin-top:0.5rem;">AVAILABLE DIVISION POOLS</div>
+            <div class="nation-pool" id="nationPoolDisplay"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERATE -->
+      <div class="panel">
+        <div class="panel-body" style="padding:0.75rem 1.25rem;">
+          <button id="generateBtn" disabled>⚡ GENERATE TEAMS ⚡</button>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div id="teamsOutput"></div>
+
+    </div>
+
+    <div class="status-bar">
+      <span>SYS: WARNO-TAS-3.0 // VANILLA // MFR: SHAPE-MONS // CRYPTO: AES-256</span>
+      <span>UPLINK: ACTIVE // PRESS F1 FOR HELP</span>
+    </div>
+    <div style="padding:0.4rem 1rem; font-family:var(--font-mono); font-size:0.75rem; color:var(--green);">C:\WARNO\TAS&gt; <span class="cursor"></span></div>
+  </div>
+
+  <script>
+    // ── DIVISION DATA ─────────────────────────────────────────────────────────
+    const DIVISIONS = {
+      NATO: [
+        // United States
+        { name: "3rd Armored Division",                  nation: "USA",   type: "Armored",              flag: "🇺🇸" },
+        { name: "1st Cavalry Division",                  nation: "USA",   type: "Armored",              flag: "🇺🇸" },
+        { name: "8th Infantry Division (Mech)",          nation: "USA",   type: "Mechanized Infantry",  flag: "🇺🇸" },
+        { name: "24th Infantry Division (Mech)",         nation: "USA",   type: "Mechanized Infantry",  flag: "🇺🇸" },
+        { name: "35th Infantry Division",                nation: "USA",   type: "Mechanized Infantry",  flag: "🇺🇸" },
+        { name: "9th Infantry Division (Mot)",           nation: "USA",   type: "Motorized Infantry",   flag: "🇺🇸" },
+        { name: "82nd Airborne Division",                nation: "USA",   type: "Airborne Infantry",    flag: "🇺🇸" },
+        { name: "11th Armored Cavalry Regiment",         nation: "USA",   type: "Cavalry",              flag: "🇺🇸" },
+        { name: "2nd Marine Division",                   nation: "USA",   type: "Naval Infantry",       flag: "🇺🇸" },
+        // West Germany
+        { name: "1. Panzerdivision",                     nation: "DEU",   type: "Armored",              flag: "🇩🇪" },
+        { name: "5. Panzerdivision",                     nation: "DEU",   type: "Armored",              flag: "🇩🇪" },
+        { name: "12. Panzerdivision",                    nation: "DEU",   type: "Armored",              flag: "🇩🇪" },
+        { name: "2. Panzergrenadier-Division",           nation: "DEU",   type: "Mechanized Infantry",  flag: "🇩🇪" },
+        { name: "6. Panzergrenadier-Division",           nation: "DEU",   type: "Mechanized Infantry",  flag: "🇩🇪" },
+        { name: "1. Luftlandedivision",                  nation: "DEU",   type: "Airborne Infantry",    flag: "🇩🇪" },
+        { name: "Territorialkommando Süd",               nation: "DEU",   type: "Territorial",          flag: "🇩🇪" },
+        // United Kingdom
+        { name: "1st Armoured Division",                 nation: "GBR",   type: "Armored",              flag: "🇬🇧" },
+        { name: "4th Armoured Division",                 nation: "GBR",   type: "Armored",              flag: "🇬🇧" },
+        { name: "2nd Infantry Division",                 nation: "GBR",   type: "Mechanized Infantry",  flag: "🇬🇧" },
+        { name: "MultiNational Airborne Division",       nation: "Multi", type: "Airborne Infantry",    flag: "🌐" },
+        { name: "Berlin Command",                        nation: "Multi", type: "Motorized Infantry",   flag: "🌐" },
+        // France
+        { name: "5e Division Blindée",                   nation: "FRA",   type: "Armored",              flag: "🇫🇷" },
+        { name: "6e Division Blindée",                   nation: "FRA",   type: "Armored",              flag: "🇫🇷" },
+        { name: "11e Division Parachutiste",             nation: "FRA",   type: "Airborne Infantry",    flag: "🇫🇷" },
+        { name: "Division du Rhin",                      nation: "FRA",   type: "Territorial",          flag: "🇫🇷" },
+        { name: "152e Division d'Infanterie",            nation: "FRA",   type: "Territorial",          flag: "🇫🇷" },
+        // Belgium / Netherlands / Canada / Spain / Denmark
+        { name: "16e Pantserdivisie",                    nation: "BEL",   type: "Armored",              flag: "🇧🇪" },
+        { name: "4e Divisie",                            nation: "NLD",   type: "Mechanized Infantry",  flag: "🇳🇱" },
+        { name: "4th Canadian Mechanized Brigade",       nation: "CAN",   type: "Mechanized Infantry",  flag: "🇨🇦" },
+        { name: "División Mecanizada «Brunete» n.º 1",   nation: "ESP",   type: "Armored",              flag: "🇪🇸" },
+        { name: "División Mecanizada «Guzmán el Bueno»", nation: "ESP",   type: "Mechanized Infantry",  flag: "🇪🇸" },
+        { name: "Jyske Division",                        nation: "DNK",   type: "Mechanized Infantry",  flag: "🇩🇰" },
+        { name: "Østre Landsdelskommando",               nation: "DNK",   type: "Territorial",          flag: "🇩🇰" },
+      ],
+      PACT: [
+        // Soviet Union
+        { name: "79-ya Tankovaya Diviziya",              nation: "URS",   type: "Armored",              flag: "🇷🇺" },
+        { name: "119-ya Tankovaya Diviziya",             nation: "URS",   type: "Armored",              flag: "🇷🇺" },
+        { name: "25-ya Tankovaya Diviziya",              nation: "URS",   type: "Armored",              flag: "🇷🇺" },
+        { name: "17-ya Gv. Tankovaya Diviziya",          nation: "URS",   type: "Armored",              flag: "🇷🇺" },
+        { name: "39-ya Gv. Motostrelkovaya Diviziya",    nation: "URS",   type: "Mechanized Infantry",  flag: "🇷🇺" },
+        { name: "27-ya Gv. Motostrelkovaya Diviziya",    nation: "URS",   type: "Mechanized Infantry",  flag: "🇷🇺" },
+        { name: "6-ya Gv. Motostrelkovaya Brigada",      nation: "URS",   type: "Mechanized Infantry",  flag: "🇷🇺" },
+        { name: "1-ya Gv. Proletarskaya MSD",            nation: "URS",   type: "Mechanized Infantry",  flag: "🇷🇺" },
+        { name: "35-ya Gv. Desantno-Shturmovaya Brigada",nation: "URS",  type: "Airborne Infantry",    flag: "🇷🇺" },
+        { name: "76-ya Gv. Vozdushno-Desantnaya Div.",   nation: "URS",   type: "Airborne Infantry",    flag: "🇷🇺" },
+        { name: "336-ya Gv. Morskoy Pekhoty Brigada",   nation: "URS",   type: "Naval Infantry",       flag: "🇷🇺" },
+        // East Germany
+        { name: "7. Panzerdivision",                     nation: "DDR",   type: "Armored",              flag: "🇩🇪" },
+        { name: "9. Panzerdivision",                     nation: "DDR",   type: "Armored",              flag: "🇩🇪" },
+        { name: "4. Mot.-Schützendivision",              nation: "DDR",   type: "Mechanized Infantry",  flag: "🇩🇪" },
+        { name: "20. Mot.-Schützendivision",             nation: "DDR",   type: "Mechanized Infantry",  flag: "🇩🇪" },
+        { name: "Berliner Gruppierung",                  nation: "DDR",   type: "Territorial",          flag: "🇩🇪" },
+        { name: "Rügener Gruppierung",                   nation: "DDR",   type: "Territorial",          flag: "🇩🇪" },
+        { name: "Kampfgruppen der Arbeiterklasse",       nation: "DDR",   type: "Territorial",          flag: "🇩🇪" },
+        // Poland
+        { name: "20 Dywizja Pancerna",                   nation: "POL",   type: "Armored",              flag: "🇵🇱" },
+        { name: "4 Dywizja Zmechanizowana",              nation: "POL",   type: "Mechanized Infantry",  flag: "🇵🇱" },
+        { name: "12 Dywizja Zmechanizowana",             nation: "POL",   type: "Mechanized Infantry",  flag: "🇵🇱" },
+        { name: "15 Dywizja Zmechanizowana",             nation: "POL",   type: "Mechanized Infantry",  flag: "🇵🇱" },
+        { name: "Grupa Desantowa",                       nation: "POL",   type: "Airborne Infantry",    flag: "🇵🇱" },
+        { name: "7 Łużycka Dywizja Desantowa",          nation: "POL",   type: "Naval Infantry",       flag: "🇵🇱" },
+        // Czechoslovakia
+        { name: "1. Tanková Divize",                     nation: "CSK",   type: "Armored",              flag: "🇨🇿" },
+        { name: "13. Tanková Divize",                    nation: "CSK",   type: "Armored",              flag: "🇨🇿" },
+        { name: "19. Motostřelecká Divize",              nation: "CSK",   type: "Mechanized Infantry",  flag: "🇨🇿" },
+        { name: "2. Motostřelecká Divize",               nation: "CSK",   type: "Mechanized Infantry",  flag: "🇨🇿" },
+        { name: "303. Tanková Divize",                   nation: "CSK",   type: "Territorial",          flag: "🇨🇿" },
+      ]
+    };
+
+    // Division draw: seeded players get weighted draw (avoids Territorial/Motorized)
+    const PREFERRED_TYPES = ['Armored', 'Mechanized Infantry', 'Cavalry', 'Airborne Infantry', 'Naval Infantry'];
+
+    function pickDivision(pool, isSeeded) {
+      const preferred = pool.filter(d => PREFERRED_TYPES.includes(d.type));
+      const source = (isSeeded && preferred.length > 0) ? preferred : pool;
+      return source[Math.floor(Math.random() * source.length)];
+    }
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    const defaultPlayers = [
+      'Cathode', 'Mister X', 'Nosebleed', 'Housemaster', 'Skapa',
+      'Remi', 'SpongeBob', 'Rolo', 'Adam', 'Baron Ironblood',
+      'Squatch', 'Milo', 'Patriot', 'Aggroth', 'Boneswar', 'RagingAlpaca'
+    ];
+
+    let players = JSON.parse(localStorage.getItem('warno-vanilla-players')) || defaultPlayers;
+    function savePlayers() { localStorage.setItem('warno-vanilla-players', JSON.stringify(players)); }
+
+    // ── ELEMENT REFS ──────────────────────────────────────────────────────────
+    let deferredPrompt;
+    const installBanner     = document.getElementById('installBanner');
+    const installBtn        = document.getElementById('installBtn');
+    const closeInstallBtn   = document.getElementById('closeInstallBtn');
+    const generateBtn       = document.getElementById('generateBtn');
+    const teamsOutput       = document.getElementById('teamsOutput');
+    const playerList        = document.getElementById('playerList');
+    const seedList          = document.getElementById('seedList');
+    const seedSection       = document.getElementById('seedSection');
+    const nationSection     = document.getElementById('nationSection');
+    const randomiseDivsChk  = document.getElementById('randomiseDivisions');
+    const divisionPoolInfo  = document.getElementById('divisionPoolInfo');
+    const nationPoolDisplay = document.getElementById('nationPoolDisplay');
+    const playerCount       = document.getElementById('playerCount');
+    const newPlayerInput    = document.getElementById('newPlayerInput');
+    const addPlayerBtn      = document.getElementById('addPlayerBtn');
+    const playerManageList  = document.getElementById('playerManageList');
+    const playerCountBadge  = document.getElementById('playerCountBadge');
+
+    // ── PWA ───────────────────────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); deferredPrompt = e; installBanner.classList.add('show');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.classList.remove('show');
+      }
+    });
+
+    closeInstallBtn.addEventListener('click', () => installBanner.classList.remove('show'));
+    window.addEventListener('appinstalled', () => { deferredPrompt = null; installBanner.classList.remove('show'); });
+
+    // ── PLAYER MANAGEMENT ─────────────────────────────────────────────────────
+    function updatePlayerManageList() {
+      playerCountBadge.textContent = `[${players.length}]`;
+      playerManageList.innerHTML = players.map(p => `
+        <div class="player-tag">
+          <span>${p.toUpperCase()}</span>
+          <button data-player="${p}" class="remove-player-btn" title="Remove">✕</button>
+        </div>
+      `).join('');
+      document.querySelectorAll('.remove-player-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pr = e.target.getAttribute('data-player');
+          players = players.filter(x => x !== pr);
+          savePlayers();
+          updatePlayerManageList();
+          updatePlayerList();
+          updateGameState();
+        });
+      });
+    }
+
+    function addPlayer() {
+      const v = newPlayerInput.value.trim();
+      if (v && !players.includes(v)) {
+        players.push(v);
+        savePlayers();
+        newPlayerInput.value = '';
+        updatePlayerManageList();
+        updatePlayerList();
+        updateGameState();
+      }
+    }
+
+    // ── GAME STATE ────────────────────────────────────────────────────────────
+    function getGameSize() { return parseInt(document.querySelector('input[name="gameSize"]:checked').value); }
+    function getMatchupType() { return document.querySelector('input[name="matchupType"]:checked').value; }
+
+    function updatePlayerList() {
+      const needed = getGameSize() * 2;
+      playerCount.textContent = `(SELECT ${needed})`;
+      playerList.innerHTML = players.map(p => `
+        <label class="check-label">
+          <input type="checkbox" value="${p}" class="player-select">
+          <span>${p.toUpperCase()}</span>
+        </label>
+      `).join('');
+      document.querySelectorAll('.player-select').forEach(cb => cb.addEventListener('change', updateGameState));
+    }
+
+    function getSelectedPlayers() {
+      return Array.from(document.querySelectorAll('.player-select:checked')).map(el => el.value);
+    }
+
+    function updateGameState() {
+      const needed = getGameSize() * 2;
+      const selected = getSelectedPlayers();
+      generateBtn.disabled = selected.length !== needed;
+      if (selected.length === needed) {
+        seedSection.style.display = 'block';
+        nationSection.style.display = 'block';
+        updateSeedList(selected);
+        updateNationPoolDisplay();
+      } else {
+        seedSection.style.display = 'none';
+        nationSection.style.display = 'none';
+      }
+    }
+
+    function updateNationPoolDisplay() {
+      const matchup = getMatchupType();
+      let pools = [];
+      if (matchup === 'nato-vs-pact') {
+        pools = [
+          { label: 'NATO POOL (TEAM 1)', divs: DIVISIONS.NATO, cls: '' },
+          { label: 'WARSAW PACT POOL (TEAM 2)', divs: DIVISIONS.PACT, cls: 'pact-pool' }
+        ];
+      } else if (matchup === 'nato-vs-nato') {
+        pools = [
+          { label: 'NATO POOL (TEAM 1)', divs: DIVISIONS.NATO, cls: '' },
+          { label: 'NATO POOL (TEAM 2)', divs: DIVISIONS.NATO, cls: '' }
+        ];
+      } else {
+        pools = [
+          { label: 'WARSAW PACT POOL (TEAM 1)', divs: DIVISIONS.PACT, cls: 'pact-pool' },
+          { label: 'WARSAW PACT POOL (TEAM 2)', divs: DIVISIONS.PACT, cls: 'pact-pool' }
+        ];
+      }
+      nationPoolDisplay.innerHTML = pools.map(p => `
+        <div class="nation-pool-col ${p.cls}">
+          <div class="pool-label">${p.label}</div>
+          <ul>${p.divs.map(d => `<li>${d.flag} ${d.name} <span class="div-cat">[${d.type}]</span></li>`).join('')}</ul>
+        </div>
+      `).join('');
+    }
+
+    randomiseDivsChk.addEventListener('change', () => {
+      divisionPoolInfo.style.display = randomiseDivsChk.checked ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('input[name="matchupType"]').forEach(r => r.addEventListener('change', updateNationPoolDisplay));
+
+    function updateSeedList(selectedPlayers) {
+      seedList.innerHTML = selectedPlayers.map(p => `
+        <label class="check-label">
+          <input type="checkbox" value="${p}" class="player-seed">
+          <span>${p.toUpperCase()}</span>
+        </label>
+      `).join('');
+    }
+
+    function getSeededPlayers() {
+      return Array.from(document.querySelectorAll('.player-seed:checked')).map(el => el.value);
+    }
+
+    // ── TEAM GENERATION ───────────────────────────────────────────────────────
+    function generateTeams() {
+      const gameSize       = getGameSize();
+      const matchup        = getMatchupType();
+      const selectedPlayers = getSelectedPlayers();
+      const seededPlayers  = getSeededPlayers();
+
+      let t1Faction, t2Faction;
+      if (matchup === 'nato-vs-pact')   { t1Faction = 'NATO'; t2Faction = 'PACT'; }
+      else if (matchup === 'nato-vs-nato') { t1Faction = 'NATO'; t2Faction = 'NATO'; }
+      else                              { t1Faction = 'PACT'; t2Faction = 'PACT'; }
+
+      const available = selectedPlayers.filter(p => !seededPlayers.includes(p));
+      let team1 = [], team2 = [];
+
+      if (seededPlayers.length === 0) {
+        let sh = [...selectedPlayers].sort(() => Math.random() - 0.5);
+        sh.sort(() => Math.random() - 0.5);
+        team1 = sh.slice(0, gameSize);
+        team2 = sh.slice(gameSize, gameSize * 2);
+      } else if (seededPlayers.length === 1) {
+        const side = Math.random() > 0.5 ? 'team1' : 'team2';
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        if (side === 'team1') {
+          team1 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+          team2 = temp.slice(gameSize - 1, gameSize * 2 - 1);
+        } else {
+          team2 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+          team1 = temp.slice(gameSize - 1, gameSize * 2 - 1);
+        }
+      } else if (seededPlayers.length === 2) {
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        team1 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+        team2 = [seededPlayers[1], ...temp.slice(gameSize - 1, gameSize * 2 - 2)];
+      } else {
+        const t1Count = Math.ceil(seededPlayers.length / 2);
+        const reshuffled = [...seededPlayers].sort(() => Math.random() - 0.5);
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        const t2Count = seededPlayers.length - t1Count;
+        team1 = [...reshuffled.slice(0, t1Count), ...temp.slice(0, gameSize - t1Count)];
+        team2 = [...reshuffled.slice(t1Count), ...temp.slice(gameSize - t1Count, gameSize - t1Count + gameSize - t2Count)];
+      }
+
+      const t1Pool = matchup !== 'pact-vs-pact' ? DIVISIONS.NATO : DIVISIONS.PACT;
+      const t2Pool = matchup !== 'nato-vs-nato'  ? DIVISIONS.PACT : DIVISIONS.NATO;
+
+      const assignDivisions = (teamPlayers, pool) => {
+        if (!randomiseDivsChk.checked) return teamPlayers.map(p => ({ name: p, division: null }));
+        return teamPlayers.map(p => ({
+          name: p,
+          division: pickDivision(pool, seededPlayers.includes(p))
+        }));
+      };
+
+      renderTeams(
+        { players: assignDivisions(team1, t1Pool), faction: t1Faction },
+        { players: assignDivisions(team2, t2Pool), faction: t2Faction },
+        gameSize
+      );
+    }
+
+    function renderTeams(t1, t2, gameSize) {
+      const teamHtml = (team, idx) => {
+        const fClass = team.faction === 'PACT' ? 'pact' : '';
+
+        const playerRowHtml = (p, i) => {
+          const divLine = p.division ? `
+            <div class="player-division-line">
+              <span>${p.division.flag}</span>
+              <span class="div-name">${p.division.name}</span>
+              <span class="div-type">[${p.division.type}]</span>
+            </div>` : '';
+          return `
+            <div class="player-row">
+              <div class="player-name-line">
+                <span class="player-name">${String(i+1).padStart(2,'0')} ${p.name.toUpperCase()}</span>
+              </div>
+              ${divLine}
+            </div>`;
+        };
+
+        return `
+          <div class="team-card ${fClass}">
+            <h3>▌ FORCE ${idx === 0 ? 'ALPHA' : 'BRAVO'} — ${team.faction} // ${gameSize}v${gameSize}</h3>
+            <div class="players-list">
+              ${team.players.map((p, i) => playerRowHtml(p, i)).join('')}
+            </div>
+          </div>`;
+      };
+
+      teamsOutput.innerHTML = `<div class="teams-container">${teamHtml(t1, 0)}${teamHtml(t2, 1)}</div>`;
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    updatePlayerManageList();
+    updatePlayerList();
+
+    document.querySelectorAll('input[name="gameSize"]').forEach(r => {
+      r.addEventListener('change', () => { updatePlayerList(); updateGameState(); });
+    });
+
+    addPlayerBtn.addEventListener('click', addPlayer);
+    newPlayerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addPlayer(); });
+    generateBtn.addEventListener('click', generateTeams);
+  </script>
+</body>
+</html>

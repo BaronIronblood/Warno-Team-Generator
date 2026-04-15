@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080c14">
+  <meta name="description" content="NightShift Community — WARNO Team Allocation Tools">
+  <title>WARNO // NIGHTSHIFT OPS TOOLS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:           #080c14;
+      --bg-panel:     #0b1120;
+      --bg-card:      #0d1526;
+      --border:       rgba(40, 80, 140, 0.4);
+      --border-hi:    rgba(60, 140, 220, 0.6);
+      --nato-primary: #2a7fff;
+      --nato-dim:     rgba(42, 127, 255, 0.35);
+      --pact-primary: #e03030;
+      --pact-dim:     rgba(220, 50, 50, 0.35);
+      --accent:       #00d4aa;
+      --accent-dim:   rgba(0, 212, 170, 0.25);
+      --warn:         #f0a030;
+      --text-primary: #c8d8f0;
+      --text-muted:   rgba(150, 180, 220, 0.5);
+      --font-ui:      'Rajdhani', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 15% 10%, rgba(10,30,70,0.5) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 90%, rgba(60,10,10,0.3) 0%, transparent 50%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(42,127,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,127,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #root {
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.5s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--nato-primary);
+      background: linear-gradient(135deg, rgba(13,21,38,0.98) 0%, rgba(8,12,20,0.98) 100%);
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .app-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--nato-primary), var(--accent), var(--pact-primary), transparent);
+    }
+
+    .header-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .header-title {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(42,127,255,0.3);
+    }
+
+    .header-title .accent { color: var(--accent); }
+
+    .header-tagline {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 3px;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+      margin-bottom: 1.25rem;
+    }
+
+    .header-strip {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .strip-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+    }
+
+    .strip-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 5px var(--accent);
+      animation: pulse-dot 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── SECTION HEADING ── */
+    .section-heading {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── TOOL CARDS ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .tool-card {
+      display: block;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      transition: opacity 0.2s;
+    }
+
+    .tool-card.nato::before  { background: linear-gradient(90deg, var(--nato-primary), transparent); }
+    .tool-card.wifi::before  { background: linear-gradient(90deg, var(--accent), transparent); }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .tool-card.nato:hover  { border-color: rgba(42,127,255,0.5); box-shadow: 0 8px 32px rgba(42,127,255,0.1); }
+    .tool-card.wifi:hover  { border-color: rgba(0,212,170,0.5);  box-shadow: 0 8px 32px rgba(0,212,170,0.1); }
+
+    .card-badge {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      padding: 0.2rem 0.6rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 6px 100%);
+    }
+
+    .tool-card.nato .card-badge { background: var(--nato-primary); color: #fff; }
+    .tool-card.wifi .card-badge { background: var(--accent);        color: #080c14; }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #fff;
+      margin-bottom: 0.4rem;
+      line-height: 1.1;
+    }
+
+    .card-version {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 0.9rem;
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-features {
+      list-style: none;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-features li {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      padding: 0.25rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-features li:last-child { border-bottom: none; }
+
+    .feat-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .tool-card.nato .feat-dot { background: var(--nato-primary); }
+    .tool-card.wifi .feat-dot { background: var(--accent); }
+
+    .card-cta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    .tool-card.nato .card-cta { color: var(--nato-primary); }
+    .tool-card.wifi .card-cta { color: var(--accent); }
+
+    .cta-arrow {
+      transition: transform 0.2s;
+    }
+
+    .tool-card:hover .cta-arrow { transform: translateX(4px); }
+
+    /* ── INFO SECTION ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .info-tile {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 0.85rem 1rem;
+    }
+
+    .info-tile-label {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      letter-spacing: 2.5px;
+      margin-bottom: 0.4rem;
+    }
+
+    .info-tile-value {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    /* ── FOOTER ── */
+    .app-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+    }
+
+    .footer-link {
+      color: var(--nato-primary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-link:hover { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .tools-grid { grid-template-columns: 1fr; }
+      .header-strip { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-eyebrow">NIGHTSHIFT COMMUNITY // WARNO MULTIPLAYER TOOLS</div>
+      <div class="header-title">NIGHTSHIFT <span class="accent">OPS</span></div>
+      <div class="header-tagline">TEAM ALLOCATION SYSTEMS // AFCENT THEATRE</div>
+      <div class="header-divider"></div>
+      <div class="header-strip">
+        <div class="strip-item"><div class="strip-dot"></div>SYSTEMS ONLINE</div>
+        <div class="strip-item"><div class="strip-dot" style="background:var(--nato-primary);box-shadow:0 0 5px var(--nato-primary);"></div>NATO AFCENT THEATRE</div>
+        <div class="strip-item"><div class="strip-dot" style="background:var(--pact-primary);box-shadow:0 0 5px var(--pact-primary);animation-delay:0.8s;"></div>WARSAW PACT OOB</div>
+      </div>
+    </header>
+
+    <!-- TOOLS -->
+    <div class="section-heading">AVAILABLE TOOLS</div>
+    <div class="tools-grid">
+
+      <!-- Vanilla TAS -->
+      <a class="tool-card nato" href="./Vanilla.html">
+        <div class="card-badge">VANILLA</div>
+        <div class="card-title">WARNO TAS</div>
+        <div class="card-version">TEAM ALLOCATION SYSTEM v3.0</div>
+        <div class="card-desc">
+          Full team randomiser for standard WARNO vanilla multiplayer. Supports all retail divisions from NATO and Warsaw Pact order of battle.
+        </div>
+        <ul class="card-features">
+          <li><span class="feat-dot"></span>1v1 THROUGH 10v10 ENGAGEMENT SIZES</li>
+          <li><span class="feat-dot"></span>PER-PLAYER DIVISION DRAW</li>
+          <li><span class="feat-dot"></span>SEEDED PLAYER SPLIT CONTROL</li>
+          <li><span class="feat-dot"></span>NATO vs PACT / MIRROR MATCHUPS</li>
+          <li><span class="feat-dot"></span>PERSISTENT PLAYER ROSTER</li>
+        </ul>
+        <div class="card-cta">LAUNCH SYSTEM <span class="cta-arrow">→</span></div>
+      </a>
+
+      <!-- WiF TAS -->
+      <a class="tool-card wifi" href="./WiF.html">
+        <div class="card-badge">WORLD IN FLAMES</div>
+        <div class="card-title">WiF TAS</div>
+        <div class="card-version">TEAM ALLOCATION SYSTEM v2.0</div>
+        <div class="card-desc">
+          Team randomiser for the World in Flames mod. Uses WiF-specific division pools distinct from vanilla — NATO coalition vs CIS faction structure.
+        </div>
+        <ul class="card-features">
+          <li><span class="feat-dot"></span>1v1 THROUGH 10v10 ENGAGEMENT SIZES</li>
+          <li><span class="feat-dot"></span>PER-PLAYER DIVISION DRAW</li>
+          <li><span class="feat-dot"></span>SEEDED PLAYER SPLIT CONTROL</li>
+          <li><span class="feat-dot"></span>NATO vs CIS / MIRROR MATCHUPS</li>
+          <li><span class="feat-dot"></span>PERSISTENT PLAYER ROSTER</li>
+        </ul>
+        <div class="card-cta">LAUNCH SYSTEM <span class="cta-arrow">→</span></div>
+      </a>
+
+    </div>
+
+    <!-- INFO TILES -->
+    <div class="section-heading">THEATRE STATUS</div>
+    <div class="info-grid">
+      <div class="info-tile">
+        <div class="info-tile-label">NATO DIVISIONS</div>
+        <div class="info-tile-value" style="color:var(--nato-primary);">33</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile-label">PACT DIVISIONS</div>
+        <div class="info-tile-value" style="color:#e03030;">32</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile-label">ENGAGEMENT SIZES</div>
+        <div class="info-tile-value">1v1 — 10v10</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile-label">COMMUNITY</div>
+        <div class="info-tile-value" style="color:var(--accent);">NIGHTSHIFT</div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-text">NIGHTSHIFT OPS TOOLS // WARNO COMMUNITY PROJECT</div>
+      <div class="footer-text">NOT AFFILIATED WITH EUGEN SYSTEMS</div>
+    </footer>
+
+  </div>
+</body>
+</html>

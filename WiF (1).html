@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f1a">
+  <meta name="description" content="WARNO World in Flames — Team Allocation System">
+  <title>WiF // TEAM ALLOCATION SYSTEM</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #080c14;
+      --bg-panel:  #0b1120;
+      --bg-card:   #0d1526;
+      --bg-input:  #060a12;
+      --border:    rgba(40, 80, 140, 0.4);
+      --border-hi: rgba(60, 140, 220, 0.6);
+
+      --nato-primary:   #2a7fff;
+      --nato-mid:       #1a5fcc;
+      --nato-dim:       rgba(42, 127, 255, 0.35);
+      --nato-glow:      rgba(42, 127, 255, 0.2);
+      --nato-text:      #7ab8ff;
+
+      --cis-primary:    #e03030;
+      --cis-mid:        #aa2020;
+      --cis-dim:        rgba(220, 50, 50, 0.35);
+      --cis-glow:       rgba(220, 50, 50, 0.2);
+      --cis-text:       #ff8888;
+
+      --accent:         #00d4aa;
+      --accent-dim:     rgba(0, 212, 170, 0.25);
+      --accent-glow:    rgba(0, 212, 170, 0.15);
+      --warn:           #f0a030;
+      --warn-dim:       rgba(240, 160, 48, 0.2);
+      --text-primary:   #c8d8f0;
+      --text-muted:     rgba(150, 180, 220, 0.5);
+      --text-dim:       rgba(120, 150, 190, 0.35);
+
+      --font-ui:        'Rajdhani', sans-serif;
+      --font-mono:      'JetBrains Mono', monospace;
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 1.5rem 1rem 3rem;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 15% 10%, rgba(10,30,70,0.5) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 90%, rgba(60,10,10,0.3) 0%, transparent 50%);
+      overflow-x: hidden;
+    }
+
+    /* subtle grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(42,127,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,127,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #root {
+      width: 100%;
+      max-width: 1020px;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.4s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--nato-primary);
+      background: linear-gradient(135deg, rgba(13,21,38,0.98) 0%, rgba(8,12,20,0.98) 100%);
+      padding: 1.25rem 1.75rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--nato-primary), var(--accent), transparent);
+    }
+
+    .header-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .brand-top {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-badge {
+      background: var(--nato-primary);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      padding: 0.2rem 0.5rem;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 6px 100%);
+    }
+
+    .brand-title {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 3px;
+      margin-left: 2px;
+    }
+
+    .header-status {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-align: right;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      flex-shrink: 0;
+      animation: pulse-dot 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── INSTALL BANNER ── */
+    .install-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.65rem 1.25rem;
+      background: var(--warn-dim);
+      border: 1px solid rgba(240, 160, 48, 0.4);
+      margin-bottom: 1rem;
+      color: var(--warn);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+    }
+
+    .install-banner.show { display: flex; }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .panel:hover { border-color: rgba(42,127,255,0.25); }
+
+    .panel-header {
+      padding: 0.55rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(42,127,255,0.04);
+    }
+
+    .panel-num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--nato-primary);
+      background: var(--nato-dim);
+      padding: 0.15rem 0.45rem;
+      letter-spacing: 1px;
+      border: 1px solid var(--nato-dim);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      padding: 1.1rem 1.25rem;
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 12px; height: 1px;
+      background: var(--nato-primary);
+    }
+
+    .section-label .badge {
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 0.1rem 0.4rem;
+      font-size: 0.55rem;
+      border: 1px solid rgba(0,212,170,0.3);
+    }
+
+    /* ── INPUTS ── */
+    input[type="text"] {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 0.55rem 0.9rem;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      letter-spacing: 1px;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--nato-primary);
+      box-shadow: 0 0 0 2px var(--nato-glow), inset 0 0 8px rgba(42,127,255,0.05);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* ── BUTTONS ── */
+    button {
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled) {
+      background: rgba(42,127,255,0.1);
+      border-color: var(--nato-primary);
+      color: #fff;
+    }
+
+    button:active:not(:disabled) { background: rgba(42,127,255,0.2); }
+
+    button:disabled {
+      color: var(--text-dim);
+      border-color: var(--text-dim);
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+
+    /* ── RADIO / CHECKBOX ── */
+    .radio-group, .check-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .radio-label, .check-label {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+      user-select: none;
+      color: var(--text-muted);
+    }
+
+    .radio-label:hover, .check-label:hover {
+      border-color: var(--border-hi);
+      background: rgba(42,127,255,0.06);
+      color: var(--text-primary);
+    }
+
+    input[type="radio"], input[type="checkbox"] {
+      appearance: none;
+      width: 14px; height: 14px;
+      border: 1px solid var(--border-hi);
+      background: var(--bg-input);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    input[type="radio"] { border-radius: 50%; }
+
+    input[type="radio"]:checked,
+    input[type="checkbox"]:checked {
+      background: var(--nato-primary);
+      border-color: var(--nato-primary);
+      box-shadow: 0 0 6px var(--nato-glow);
+    }
+
+    input[type="radio"]:checked::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: -2px; left: 1px;
+      font-size: 11px;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .radio-label:has(input:checked),
+    .check-label:has(input:checked) {
+      border-color: var(--nato-primary);
+      background: var(--nato-dim);
+      color: #fff;
+    }
+
+    /* ── ADD PLAYER ROW ── */
+    .add-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* ── PLAYER TAGS ── */
+    .player-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.6rem 0.25rem 0.8rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      transition: border-color 0.15s;
+    }
+
+    .player-tag:hover { border-color: var(--border-hi); }
+
+    .player-tag .remove-player-btn {
+      padding: 0 0.2rem;
+      font-size: 0.8rem;
+      border: none;
+      background: transparent;
+      color: rgba(200,80,80,0.5);
+      cursor: pointer;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+
+    .player-tag .remove-player-btn:hover {
+      color: var(--cis-primary);
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    /* ── PLAYER GRID ── */
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 0.4rem;
+    }
+
+    /* override check-label inside grid */
+    .player-grid .check-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      padding: 0.45rem 0.75rem;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0.75rem 0;
+    }
+
+    /* ── GENERATE BUTTON ── */
+    #generateBtn {
+      width: 100%;
+      padding: 0.85rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      border: 1px solid var(--nato-primary);
+      color: var(--nato-primary);
+      background: var(--nato-glow);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    #generateBtn::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--nato-primary);
+    }
+
+    #generateBtn:not(:disabled):hover {
+      background: rgba(42,127,255,0.2);
+      box-shadow: 0 0 20px var(--nato-glow);
+      color: #fff;
+    }
+
+    #generateBtn:disabled {
+      border-color: var(--border);
+      color: var(--text-dim);
+      background: transparent;
+      opacity: 0.4;
+    }
+
+    #generateBtn:disabled::before { background: var(--text-dim); }
+
+    /* ── TEAMS OUTPUT ── */
+    .teams-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .team-card {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      position: relative;
+      overflow: hidden;
+      animation: cardReveal 0.35s ease-out both;
+    }
+
+    @keyframes cardReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .team-card:nth-child(2) { animation-delay: 0.1s; }
+
+    .team-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .team-card.nato::before { background: linear-gradient(90deg, var(--nato-primary), transparent); }
+    .team-card.cis::before  { background: linear-gradient(90deg, var(--cis-primary), transparent); }
+
+    .team-card-header {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .team-faction-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      padding: 0.2rem 0.6rem;
+      clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 100%, 5px 100%);
+    }
+
+    .team-card.nato .team-faction-badge {
+      background: var(--nato-primary);
+      color: #fff;
+    }
+
+    .team-card.cis .team-faction-badge {
+      background: var(--cis-primary);
+      color: #fff;
+    }
+
+    .team-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      flex: 1;
+    }
+
+    .team-card.nato .team-title { color: var(--nato-text); }
+    .team-card.cis  .team-title { color: var(--cis-text); }
+
+    .team-size-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* ── PLAYERS LIST ── */
+    .players-list {
+      padding: 0.5rem 0;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 1rem;
+      border-bottom: 1px solid rgba(40,80,140,0.1);
+      transition: background 0.1s;
+    }
+
+    .player-row.has-division {
+      padding: 0.5rem 1rem;
+      align-items: flex-start;
+    }
+
+    .player-row:last-child { border-bottom: none; }
+    .player-row:hover { background: rgba(42,127,255,0.04); }
+
+    .player-num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      width: 16px;
+      text-align: right;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .player-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    .team-card.nato .player-dot { background: var(--nato-primary); }
+    .team-card.cis  .player-dot { background: var(--cis-primary); }
+
+    .player-row-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-name {
+      font-weight: 600;
+      letter-spacing: 1px;
+      font-size: 0.92rem;
+      line-height: 1;
+    }
+
+    .team-card.nato .player-name { color: var(--text-primary); }
+    .team-card.cis  .player-name { color: var(--text-primary); }
+
+    .player-division {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .player-div-flag {
+      font-size: 0.85rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .player-div-name {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-card.nato .player-div-name { color: var(--nato-text); }
+    .team-card.cis  .player-div-name { color: var(--cis-text); }
+
+    .player-div-type {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 1px;
+      padding: 0.1rem 0.35rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .team-card.nato .player-div-type {
+      background: var(--nato-dim);
+      color: var(--nato-text);
+      border: 1px solid rgba(42,127,255,0.15);
+    }
+
+    .team-card.cis .player-div-type {
+      background: var(--cis-dim);
+      color: var(--cis-text);
+      border: 1px solid rgba(220,50,50,0.15);
+    }
+
+    /* ── NATION POOL DISPLAY ── */
+    .nation-pool {
+      margin-top: 0.75rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .nation-pool-col {
+      border: 1px solid var(--border);
+      padding: 0.65rem 0.9rem;
+      background: var(--bg-card);
+    }
+
+    .nation-pool-col.cis-pool { border-color: var(--cis-dim); }
+
+    .pool-label {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 2.5px;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nation-pool-col.cis-pool .pool-label { color: rgba(220,80,80,0.45); }
+
+    .pool-nation-group { margin-bottom: 0.65rem; }
+    .pool-nation-group:last-child { margin-bottom: 0; }
+    .pool-nation-header {
+      font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 2px;
+      color: var(--nato-text); margin-bottom: 0.2rem; padding-bottom: 0.2rem;
+      border-bottom: 1px solid rgba(42,127,255,0.15);
+    }
+    .nation-pool-col.cis-pool .pool-nation-header { color: var(--cis-text); border-bottom-color: rgba(220,50,50,0.15); }
+    .div-type-tag {
+      font-family: var(--font-mono); font-size: 0.55rem; opacity: 0.5;
+      letter-spacing: 1px; margin-right: 0.25rem;
+    }
+
+    .nation-pool-col ul {
+      list-style: none;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.9;
+    }
+
+    .nation-pool-col ul li::before {
+      content: '— ';
+      color: var(--nato-primary);
+      opacity: 0.5;
+    }
+
+    .nation-pool-col.cis-pool ul li::before { color: var(--cis-primary); }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      padding: 0.5rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(8,12,20,0.8);
+      display: flex;
+      justify-content: space-between;
+      letter-spacing: 1.2px;
+      margin-top: 0.75rem;
+    }
+
+    /* ── SEED TOOLTIP ── */
+    .seed-note {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(0,212,170,0.04);
+      border-left: 2px solid var(--accent);
+    }
+
+    @media (max-width: 700px) {
+      .teams-container { grid-template-columns: 1fr; }
+      .brand-title { font-size: 1.5rem; }
+      .header-status { display: none; }
+      .nation-pool { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+
+    <a href="./index.html" style="display:inline-flex;align-items:center;gap:0.5rem;font-family:var(--font-mono);font-size:0.58rem;letter-spacing:2px;color:var(--text-muted);text-decoration:none;padding:0.3rem 0;margin-bottom:0.5rem;transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">← BACK TO WARNO OPS TOOLS</a>
+
+    <!-- INSTALL BANNER -->
+    <div class="install-banner" id="installBanner">
+      <span>⬇ INSTALL WORLD IN FLAMES TAS AS LOCAL APPLICATION</span>
+      <div style="display:flex;gap:0.5rem;">
+        <button id="installBtn" style="font-size:0.75rem;padding:0.35rem 0.9rem;border-color:var(--warn);color:var(--warn);">INSTALL</button>
+        <button id="closeInstallBtn" style="font-size:0.75rem;padding:0.35rem 0.6rem;border-color:rgba(240,160,48,0.3);color:var(--warn);">✕</button>
+      </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="app-header">
+      <div class="header-brand">
+        <div class="brand-top">
+          <div class="brand-badge">WiF MOD</div>
+          <div class="brand-title">TAS</div>
+        </div>
+        <div class="brand-sub">WORLD IN FLAMES // TEAM ALLOCATION SYSTEM v3.0 // NATO-JOINT-CMD</div>
+      </div>
+      <div class="header-status">
+        <div class="status-row"><span class="status-dot"></span> SYSTEM ONLINE</div>
+        <div class="status-row" style="color:rgba(120,150,190,0.35);">CRYPTO: AES-256 ACTIVE</div>
+        <div class="status-row" style="color:rgba(120,150,190,0.35);">NODE: SHAPE-HQ-BR07</div>
+        <div class="status-row" style="color:rgba(120,150,190,0.35);">CLASSIFICATION: RESTRICTED</div>
+      </div>
+    </div>
+
+    <div>
+
+      <!-- MODULE 1: PERSONNEL REGISTER -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-num">M-01</span>
+          <span class="panel-title">Personnel Register</span>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Add Operator to Register</div>
+          <div class="add-row" style="margin-bottom:1rem;">
+            <input type="text" id="newPlayerInput" placeholder="Enter callsign…">
+            <button id="addPlayerBtn">Add</button>
+          </div>
+          <div class="section-label">Registered Operators <span class="badge" id="playerCountBadge"></span></div>
+          <div id="playerManageList" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:28px;"></div>
+        </div>
+      </div>
+
+      <!-- MODULE 2: ENGAGEMENT PARAMETERS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-num">M-02</span>
+          <span class="panel-title">Engagement Parameters</span>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Engagement Size</div>
+          <div class="radio-group" style="margin-bottom:1rem;">
+            <label class="radio-label"><input type="radio" name="gameSize" value="1"><span>1v1</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="2"><span>2v2</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="3"><span>3v3</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="4"><span>4v4</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="5" checked><span>5v5</span></label>
+            <label class="radio-label"><input type="radio" name="gameSize" value="10"><span>10v10</span></label>
+          </div>
+          <div class="section-label">Force Matchup</div>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="matchupType" value="nato-vs-cis" checked><span>NATO vs CIS</span></label>
+            <label class="radio-label"><input type="radio" name="matchupType" value="nato-vs-nato"><span>NATO vs NATO</span></label>
+            <label class="radio-label"><input type="radio" name="matchupType" value="cis-vs-cis"><span>CIS vs CIS</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 3: OPERATOR SELECTION -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-num">M-03</span>
+          <span class="panel-title">Operator Selection</span>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Select Operators <span class="badge" id="playerCount"></span></div>
+          <div id="playerList" class="player-grid"></div>
+        </div>
+      </div>
+
+      <!-- MODULE 4: PRIORITY ASSIGNMENTS (SEED) -->
+      <div class="panel" id="seedSection" style="display:none;">
+        <div class="panel-header">
+          <span class="panel-num">M-04</span>
+          <span class="panel-title">Priority Assignments — Optional</span>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Mark operators for guaranteed split</div>
+          <div id="seedList" class="player-grid"></div>
+          <div class="seed-note">Seeded operators are placed on opposing sides. In World in Flames mode, seeded players receive weighted assignment toward less competitive divisions.</div>
+        </div>
+      </div>
+
+      <!-- MODULE 5: DIVISION ASSIGNMENT -->
+      <div class="panel" id="nationSection" style="display:none;">
+        <div class="panel-header">
+          <span class="panel-num">M-05</span>
+          <span class="panel-title">Division Assignment — Optional</span>
+        </div>
+        <div class="panel-body">
+          <label class="check-label" style="margin-bottom:0.9rem;">
+            <input type="checkbox" id="randomiseNations">
+            <span>Randomise division for each team</span>
+          </label>
+          <div id="nationPoolInfo" style="display:none;">
+            <div class="section-label" style="margin-top:0.25rem;">Available Division Pools</div>
+            <div class="nation-pool" id="nationPoolDisplay"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERATE -->
+      <div class="panel" style="margin-bottom:0.75rem;">
+        <div class="panel-body" style="padding:0.75rem 1.25rem;">
+          <button id="generateBtn" disabled>Generate Team Allocation</button>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div id="teamsOutput"></div>
+
+    </div>
+
+    <div class="status-bar">
+      <span>WARNO-WIF-TAS v3.0 // MOD: WORLD IN FLAMES // SHAPE-BR07</span>
+      <span id="clockDisplay"></span>
+    </div>
+  </div>
+
+  <script>
+    // ── WORLD IN FLAMES DIVISION DATA ──────────────────────────────────────────
+    const DIVISIONS = {
+      NATO: [
+        { id: 'us_1ad',   name: '1st Armored Division',       nation: 'USA',            flag: '🇺🇸', type: 'Heavy Armour',       seededWeight: 1 },
+        { id: 'us_4id',   name: '4th Infantry Division',      nation: 'USA',            flag: '🇺🇸', type: 'SBCT Motorized',     seededWeight: 3 },
+        { id: 'us_34id',  name: '34th Infantry Division',     nation: 'USA',            flag: '🇺🇸', type: 'National Guard',     seededWeight: 3 },
+        { id: 'fr_2bb',   name: '2e Brigade Blindée',         nation: 'France',         flag: '🇫🇷', type: 'Heavy Armour',       seededWeight: 1 },
+        { id: 'fr_6blb',  name: '6e Brigade Légère Blindée',  nation: 'France',         flag: '🇫🇷', type: 'Light Mechanized',   seededWeight: 2 },
+        { id: 'de_1pz',   name: '1. Panzerdivision',          nation: 'Germany/NL',     flag: '🇩🇪🇳🇱', type: 'Medium Armour',   seededWeight: 1 },
+        { id: 'de_10pz',  name: '10. Panzerdivision',         nation: 'Germany',        flag: '🇩🇪', type: 'Heavy Armour',       seededWeight: 1 },
+        { id: 'be_mot',   name: 'Motorized Brigade',          nation: 'Belgium',        flag: '🇧🇪', type: 'Motorized Infantry', seededWeight: 4 },
+      ],
+      CIS: [
+        { id: 'ru_4gtd',   name: '4th Guards Tank Division',          nation: 'Russia', flag: '🇷🇺', type: 'Heavy Armour',          seededWeight: 1 },
+        { id: 'ru_2gmrd',  name: '2nd Guards Motor Rifle Division',   nation: 'Russia', flag: '🇷🇺', type: 'Heavy Mechanized',      seededWeight: 1 },
+        { id: 'ru_90gtd',  name: '90th Guards Tank Division',         nation: 'Russia', flag: '🇷🇺', type: 'Medium-Heavy Armour',   seededWeight: 1 },
+        { id: 'ru_20gmrd', name: '20th Guards Motor Rifle Division',  nation: 'Russia', flag: '🇷🇺', type: 'Advanced Heavy Mech',   seededWeight: 1 },
+        { id: 'ru_35gab',  name: '35th Guards Airborne Brigade',      nation: 'Russia', flag: '🇷🇺', type: 'Air Assault',           seededWeight: 2 },
+        { id: 'ru_155gni', name: '155th Guards Naval Infantry Div.',  nation: 'Russia', flag: '🇷🇺', type: 'Heavy Naval Infantry',  seededWeight: 2 },
+        { id: 'ru_42gmrd', name: '42nd Guards Motor Rifle Division',  nation: 'Russia', flag: '🇷🇺', type: 'Medium Mechanized',     seededWeight: 4 },
+        { id: 'ru_omsd',   name: 'OMSDON Division',                   nation: 'Russia', flag: '🇷🇺', type: 'Security / Mixed',      seededWeight: 2 },
+        { id: 'ru_114gmrd',name: '114th Guards Motor Rifle Division', nation: 'Russia', flag: '🇷🇺', type: 'Heavy Reservist',       seededWeight: 4 },
+      ]
+    };
+
+    // Weighted random picker (honours seededWeight)
+    function pickDivision(pool, isSeeded) {
+      if (!isSeeded) {
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      // Seeded: use weights (higher = more likely for seeded players)
+      const totalWeight = pool.reduce((s, d) => s + d.seededWeight, 0);
+      let r = Math.random() * totalWeight;
+      for (const d of pool) {
+        r -= d.seededWeight;
+        if (r <= 0) return d;
+      }
+      return pool[pool.length - 1];
+    }
+
+    // ── PLAYER STATE ──────────────────────────────────────────────────────────
+    const defaultPlayers = [
+      'Cathode', 'Mister X', 'Nosebleed', 'Housemaster', 'Skapa',
+      'Remi', 'SpongeBob', 'Rolo', 'Adam', 'Baron Ironblood',
+      'Squatch', 'Milo', 'Patriot', 'Aggroth', 'Boneswar', 'RagingAlpaca'
+    ];
+
+    let players = JSON.parse(localStorage.getItem('warno-wif-players')) || defaultPlayers;
+
+    function savePlayers() {
+      localStorage.setItem('warno-wif-players', JSON.stringify(players));
+    }
+
+    // ── DOM REFS ──────────────────────────────────────────────────────────────
+    let deferredPrompt;
+    const installBanner     = document.getElementById('installBanner');
+    const installBtn        = document.getElementById('installBtn');
+    const closeInstallBtn   = document.getElementById('closeInstallBtn');
+    const generateBtn       = document.getElementById('generateBtn');
+    const teamsOutput       = document.getElementById('teamsOutput');
+    const playerList        = document.getElementById('playerList');
+    const seedList          = document.getElementById('seedList');
+    const seedSection       = document.getElementById('seedSection');
+    const nationSection     = document.getElementById('nationSection');
+    const randomiseNationsChk = document.getElementById('randomiseNations');
+    const nationPoolInfo    = document.getElementById('nationPoolInfo');
+    const nationPoolDisplay = document.getElementById('nationPoolDisplay');
+    const playerCount       = document.getElementById('playerCount');
+    const newPlayerInput    = document.getElementById('newPlayerInput');
+    const addPlayerBtn      = document.getElementById('addPlayerBtn');
+    const playerManageList  = document.getElementById('playerManageList');
+    const playerCountBadge  = document.getElementById('playerCountBadge');
+
+    // ── SERVICE WORKER ────────────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.classList.add('show');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.classList.remove('show');
+      }
+    });
+
+    closeInstallBtn.addEventListener('click', () => installBanner.classList.remove('show'));
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      installBanner.classList.remove('show');
+    });
+
+    // ── CLOCK ─────────────────────────────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clockDisplay').textContent =
+        now.toUTCString().replace('GMT', 'UTC').toUpperCase();
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── PLAYER MANAGEMENT ────────────────────────────────────────────────────
+    function updatePlayerManageList() {
+      playerCountBadge.textContent = players.length;
+      playerManageList.innerHTML = players.map(p => `
+        <div class="player-tag">
+          <span>${p.toUpperCase()}</span>
+          <button data-player="${p}" class="remove-player-btn" title="Remove">✕</button>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.remove-player-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pr = e.target.getAttribute('data-player');
+          players = players.filter(x => x !== pr);
+          savePlayers();
+          updatePlayerManageList();
+          updatePlayerList();
+          updateGameState();
+        });
+      });
+    }
+
+    function addPlayer() {
+      const v = newPlayerInput.value.trim();
+      if (v && !players.includes(v)) {
+        players.push(v);
+        savePlayers();
+        newPlayerInput.value = '';
+        updatePlayerManageList();
+        updatePlayerList();
+        updateGameState();
+      }
+    }
+
+    function getGameSize() {
+      return parseInt(document.querySelector('input[name="gameSize"]:checked').value);
+    }
+
+    function updatePlayerList() {
+      const needed = getGameSize() * 2;
+      playerCount.textContent = `Select ${needed}`;
+      playerList.innerHTML = players.map(p => `
+        <label class="check-label">
+          <input type="checkbox" value="${p}" class="player-select">
+          <span>${p.toUpperCase()}</span>
+        </label>
+      `).join('');
+      document.querySelectorAll('.player-select').forEach(cb => {
+        cb.addEventListener('change', updateGameState);
+      });
+    }
+
+    function getSelectedPlayers() {
+      return Array.from(document.querySelectorAll('.player-select:checked')).map(el => el.value);
+    }
+
+    function updateGameState() {
+      const gameSize = getGameSize();
+      const needed = gameSize * 2;
+      const selected = getSelectedPlayers();
+      generateBtn.disabled = selected.length !== needed;
+
+      if (selected.length === needed) {
+        seedSection.style.display = 'block';
+        nationSection.style.display = 'block';
+        updateSeedList(selected);
+        updateNationPoolDisplay();
+      } else {
+        seedSection.style.display = 'none';
+        nationSection.style.display = 'none';
+      }
+    }
+
+    function getMatchupType() {
+      return document.querySelector('input[name="matchupType"]:checked').value;
+    }
+
+    function updateNationPoolDisplay() {
+      const matchup = getMatchupType();
+      let pools = [];
+      if (matchup === 'nato-vs-cis') {
+        pools = [
+          { label: 'NATO POOL — TEAM ALPHA', divs: DIVISIONS.NATO, cls: '' },
+          { label: 'CIS POOL — TEAM BRAVO',  divs: DIVISIONS.CIS,  cls: 'cis-pool' }
+        ];
+      } else if (matchup === 'nato-vs-nato') {
+        pools = [
+          { label: 'NATO POOL — TEAM ALPHA', divs: DIVISIONS.NATO, cls: '' },
+          { label: 'NATO POOL — TEAM BRAVO', divs: DIVISIONS.NATO, cls: '' }
+        ];
+      } else {
+        pools = [
+          { label: 'CIS POOL — TEAM ALPHA', divs: DIVISIONS.CIS, cls: 'cis-pool' },
+          { label: 'CIS POOL — TEAM BRAVO', divs: DIVISIONS.CIS, cls: 'cis-pool' }
+        ];
+      }
+      nationPoolDisplay.innerHTML = pools.map(p => {
+        const byNation = [];
+        const seen = {};
+        p.divs.forEach(d => {
+          if (!seen[d.nation]) { seen[d.nation] = true; byNation.push({ nation: d.nation, flag: d.flag, divs: [] }); }
+          byNation.find(g => g.nation === d.nation).divs.push(d);
+        });
+        const groupHtml = byNation.map(g => `
+          <div class="pool-nation-group">
+            <div class="pool-nation-header">${g.flag} ${g.nation}</div>
+            <ul>${g.divs.map(d => `<li><span class="div-type-tag">${d.type}</span> ${d.name}</li>`).join('')}</ul>
+          </div>
+        `).join('');
+        return `
+          <div class="nation-pool-col ${p.cls}">
+            <div class="pool-label">${p.label}</div>
+            ${groupHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    randomiseNationsChk.addEventListener('change', () => {
+      nationPoolInfo.style.display = randomiseNationsChk.checked ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('input[name="matchupType"]').forEach(r => {
+      r.addEventListener('change', updateNationPoolDisplay);
+    });
+
+    function updateSeedList(selectedPlayers) {
+      seedList.innerHTML = selectedPlayers.map(p => `
+        <label class="check-label">
+          <input type="checkbox" value="${p}" class="player-seed">
+          <span>${p.toUpperCase()}</span>
+        </label>
+      `).join('');
+    }
+
+    function getSeededPlayers() {
+      return Array.from(document.querySelectorAll('.player-seed:checked')).map(el => el.value);
+    }
+
+    // ── TEAM GENERATION ───────────────────────────────────────────────────────
+    function generateTeams() {
+      const gameSize = getGameSize();
+      const matchup = getMatchupType();
+      const selectedPlayers = getSelectedPlayers();
+      const seededPlayers = getSeededPlayers();
+
+      let t1Faction, t2Faction;
+      if (matchup === 'nato-vs-cis')   { t1Faction = 'NATO'; t2Faction = 'CIS'; }
+      else if (matchup === 'nato-vs-nato') { t1Faction = 'NATO'; t2Faction = 'NATO'; }
+      else                              { t1Faction = 'CIS';  t2Faction = 'CIS'; }
+
+      const available = selectedPlayers.filter(p => !seededPlayers.includes(p));
+      let team1 = [], team2 = [];
+
+      if (seededPlayers.length === 0) {
+        let shuffled = [...selectedPlayers].sort(() => Math.random() - 0.5);
+        shuffled.sort(() => Math.random() - 0.5);
+        team1 = shuffled.slice(0, gameSize);
+        team2 = shuffled.slice(gameSize, gameSize * 2);
+      } else if (seededPlayers.length === 1) {
+        const side = Math.random() > 0.5 ? 'team1' : 'team2';
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        if (side === 'team1') {
+          team1 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+          team2 = temp.slice(gameSize - 1, gameSize * 2 - 1);
+        } else {
+          team2 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+          team1 = temp.slice(gameSize - 1, gameSize * 2 - 1);
+        }
+      } else if (seededPlayers.length === 2) {
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        team1 = [seededPlayers[0], ...temp.slice(0, gameSize - 1)];
+        team2 = [seededPlayers[1], ...temp.slice(gameSize - 1, gameSize * 2 - 2)];
+      } else {
+        const t1Count = Math.ceil(seededPlayers.length / 2);
+        const reshuffled = [...seededPlayers].sort(() => Math.random() - 0.5);
+        const temp = [...available].sort(() => Math.random() - 0.5);
+        team1 = [...reshuffled.slice(0, t1Count), ...temp.slice(0, gameSize - t1Count)];
+        team2 = [...reshuffled.slice(t1Count), ...temp.slice(gameSize - t1Count, (gameSize - t1Count) + (gameSize - (seededPlayers.length - t1Count)))];
+      }
+
+      // Per-player division assignment
+      const assignDivisionsToTeam = (teamPlayers, pool) => {
+        if (!randomiseNationsChk.checked) {
+          return teamPlayers.map(p => ({ name: p, division: null }));
+        }
+        return teamPlayers.map(p => ({
+          name: p,
+          division: pickDivision(pool, seededPlayers.includes(p))
+        }));
+      };
+
+      const t1Pool = matchup !== 'cis-vs-cis' ? DIVISIONS.NATO : DIVISIONS.CIS;
+      const t2Pool = matchup !== 'nato-vs-nato' ? DIVISIONS.CIS : DIVISIONS.NATO;
+
+      renderTeams(
+        { players: assignDivisionsToTeam(team1, t1Pool), faction: t1Faction },
+        { players: assignDivisionsToTeam(team2, t2Pool), faction: t2Faction },
+        gameSize
+      );
+    }
+
+    function renderTeams(t1, t2, gameSize) {
+      const teamHtml = (team, idx) => {
+        const factionClass = team.faction === 'CIS' ? 'cis' : 'nato';
+        const hasDivisions = team.players.some(p => p.division);
+
+        const playerRowHtml = (p, i) => {
+          const divLine = p.division ? `
+            <div class="player-division">
+              <span class="player-div-flag" style="font-size:1rem;line-height:1;">${p.division.flag}</span>
+              <span class="player-div-name">${p.division.name}</span>
+              <span class="player-div-type">${p.division.type}</span>
+            </div>
+          ` : '';
+          return `
+            <div class="player-row ${hasDivisions ? 'has-division' : ''}">
+              <span class="player-num">${String(i+1).padStart(2,'0')}</span>
+              <span class="player-dot"></span>
+              <div class="player-row-inner">
+                <span class="player-name">${p.name.toUpperCase()}</span>
+                ${divLine}
+              </div>
+            </div>
+          `;
+        };
+
+        return `
+          <div class="team-card ${factionClass}">
+            <div class="team-card-header">
+              <span class="team-faction-badge">${team.faction}</span>
+              <span class="team-title">FORCE ${idx === 0 ? 'ALPHA' : 'BRAVO'}</span>
+              <span class="team-size-badge">${gameSize}v${gameSize}</span>
+            </div>
+            <div class="players-list">
+              ${team.players.map((p, i) => playerRowHtml(p, i)).join('')}
+            </div>
+          </div>
+        `;
+      };
+
+      teamsOutput.innerHTML = `<div class="teams-container">${teamHtml(t1, 0)}${teamHtml(t2, 1)}</div>`;
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    updatePlayerManageList();
+    updatePlayerList();
+
+    document.querySelectorAll('input[name="gameSize"]').forEach(r => {
+      r.addEventListener('change', () => { updatePlayerList(); updateGameState(); });
+    });
+
+    addPlayerBtn.addEventListener('click', addPlayer);
+    newPlayerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addPlayer(); });
+    generateBtn.addEventListener('click', generateTeams);
+  </script>
+</body>
+</html>
